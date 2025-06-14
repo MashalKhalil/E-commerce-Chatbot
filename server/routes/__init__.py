@@ -1,7 +1,8 @@
 from .auth_routes import auth_bp
-from .product_routes import product_bp
-from .chat_routes import chat_bp
 from .cart_routes import cart_bp
+from .chat_routes import chat_bp
+from .like_routes import like_bp
+from .product_routes import product_bp
 
 
 def register_routes(app):
@@ -10,3 +11,4 @@ def register_routes(app):
     app.register_blueprint(product_bp, url_prefix="/api/products")
     app.register_blueprint(chat_bp, url_prefix="/api/chat")
     app.register_blueprint(cart_bp, url_prefix="/api")
+    app.register_blueprint(like_bp, url_prefix="/api")

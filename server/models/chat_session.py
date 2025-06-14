@@ -1,6 +1,7 @@
-from datetime import datetime
-from models import db
 import json
+from datetime import datetime
+
+from models import db
 
 
 class ChatSession(db.Model):
@@ -9,9 +10,9 @@ class ChatSession(db.Model):
     id = db.Column(db.String(36), primary_key=True)
     user_id = db.Column(db.String(36), db.ForeignKey("users.id"), nullable=True)
     session_data = db.Column(db.Text)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=datetime.now())
     updated_at = db.Column(
-        db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
+        db.DateTime, default=datetime.now(), onupdate=datetime.now()
     )
     is_active = db.Column(db.Boolean, default=True)
 

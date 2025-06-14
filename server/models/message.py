@@ -1,6 +1,7 @@
-from datetime import datetime
-from models import db
 import json
+from datetime import datetime
+
+from models import db
 
 
 class Message(db.Model):
@@ -15,7 +16,7 @@ class Message(db.Model):
     message_type = db.Column(db.String(50), default="text")
     products = db.Column(db.Text)
     extra_data = db.Column(db.Text)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=datetime.now())
 
     def __init__(
         self,
@@ -59,17 +60,10 @@ class Message(db.Model):
 
     def to_dict(self, include_product_details=False):
         """Convert message to dictionary"""
-        data = {
-            "id": self.id,
-            "chatSessionId": self.chat_session_id,
-            "content": self.content,
-            "isBot": self.is_bot,
-            "type": self.message_type,
-            "products": self.get_products(),
-            "extraData": self.get_extra_data(),
-            "timestamp": self.created_at.isoformat(),
-        }
-
+        # Get product IDs by default
+        products_data = self.get_products()
+        
+        # If include_product_details is True, replace IDs with full product objects
         if include_product_details and self.get_products():
             from .product import Product
 
@@ -78,7 +72,19 @@ class Message(db.Model):
                 product = Product.query.get(product_id)
                 if product:
                     product_details.append(product.to_dict())
-            data["productDetails"] = product_details
+            # Replace the product IDs with full product objects
+            products_data = product_details
+
+        data = {
+            "id": self.id,
+            "chatSessionId": self.chat_session_id,
+            "content": self.content,
+            "isBot": self.is_bot,
+            "type": self.message_type,
+            "products": products_data,
+            "extraData": self.get_extra_data(),
+            "timestamp": self.created_at.isoformat(),
+        }
 
         return data
 

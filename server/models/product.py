@@ -1,6 +1,7 @@
-from datetime import datetime
-from models import db
 import json
+from datetime import datetime
+
+from models import db
 
 
 class Product(db.Model):
@@ -21,9 +22,9 @@ class Product(db.Model):
     features = db.Column(db.Text)
     is_on_sale = db.Column(db.Boolean, default=False, index=True)
     sale_percentage = db.Column(db.Integer)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=datetime.now())
     updated_at = db.Column(
-        db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
+        db.DateTime, default=datetime.now(), onupdate=datetime.now()
     )
     is_active = db.Column(db.Boolean, default=True, index=True)
 

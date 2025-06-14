@@ -1,7 +1,8 @@
-from datetime import datetime
-from models import db
-from werkzeug.security import generate_password_hash, check_password_hash
 import json
+from datetime import datetime
+
+from models import db
+from werkzeug.security import check_password_hash, generate_password_hash
 
 
 class User(db.Model):
@@ -12,9 +13,9 @@ class User(db.Model):
     name = db.Column(db.String(100), nullable=False)
     password_hash = db.Column(db.String(255), nullable=False)
     preferences = db.Column(db.Text)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=datetime.now())
     updated_at = db.Column(
-        db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
+        db.DateTime, default=datetime.now(), onupdate=datetime.now()
     )
     is_active = db.Column(db.Boolean, default=True)
 
