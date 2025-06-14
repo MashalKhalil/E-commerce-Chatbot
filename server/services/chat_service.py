@@ -218,26 +218,52 @@ class ChatService:
     def _add_to_cart_tool(self, input_json: str) -> str:
         """Tool function to add a product to the user's cart"""
         try:
+            # Log the input for debugging
+            logger.info(f"add_to_cart_tool input: {input_json}")
+            
             data = json.loads(input_json)
             product_id = data.get("product_id")
             quantity = data.get("quantity", 1)
             user_id = data.get("user_id", "guest_user")
+
+            logger.info(f"Parsed data: product_id={product_id}, quantity={quantity}, user_id={user_id}")
 
             if not product_id:
                 return json.dumps(
                     {"message": "Missing product_id for add to cart.", "success": False}
                 )
 
-            if len(product_id) < 32 and " " in product_id:
+            # If product_id looks like a product name, try to find the actual product
+            if len(product_id) < 32 or " " in product_id:
+                logger.info(f"Searching for product by name: {product_id}")
+                # Search for product by name (case-insensitive)
                 product = Product.query.filter(
                     Product.name.ilike(f"%{product_id}%")
                 ).first()
+                
                 if product:
+                    logger.info(f"Found product: {product.name} with ID: {product.id}")
                     product_id = product.id
+                else:
+                    logger.warning(f"Product not found: {product_id}")
+                    return json.dumps(
+                        {
+                            "message": f"Product '{product_id}' not found.",
+                            "success": False,
+                        }
+                    )
 
-            cart_item = self.cart_service.add_to_cart(user_id, product_id, quantity)
+            # Add to cart using the cart service
+            logger.info(f"Adding to cart: user_id={user_id}, product_id={product_id}, quantity={quantity}")
+            result = self.cart_service.add_to_cart(user_id, product_id, quantity)
+            logger.info(f"Cart service result: {result}")
+            
+            # Check if the cart service returned an error
+            if not result.get("success", True):
+                return json.dumps(result)
+            
+            # Get product details for response
             product = Product.query.get(product_id)
-
             if not product:
                 return json.dumps(
                     {
@@ -246,13 +272,25 @@ class ChatService:
                     }
                 )
 
+            success_response = {
+                "message": f"Added {quantity} x {product.name} to your cart.",
+                "success": True,
+                "product": {
+                    "id": product.id,
+                    "name": product.name,
+                    "price": product.price,
+                },
+                "quantity": quantity,
+            }
+            
+            logger.info(f"Returning success response: {success_response}")
+            return json.dumps(success_response)
+            
+        except json.JSONDecodeError as e:
+            logger.error(f"JSON decode error in add_to_cart_tool: {str(e)}")
+            logger.error(f"Input that caused error: {repr(input_json)}")
             return json.dumps(
-                {
-                    "message": f"Added {quantity} x {product.name} to your cart.",
-                    "success": True,
-                    "cart_item": cart_item.to_dict(),
-                    "product": product.to_dict() if product else None,
-                }
+                {"message": "Invalid JSON format in request.", "success": False}
             )
         except Exception as e:
             logger.error(f"Error in add_to_cart_tool: {str(e)}")
