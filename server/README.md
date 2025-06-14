@@ -48,7 +48,7 @@ JWT_SECRET_KEY=your-jwt-secret-key-here
 ### DB & Pinecone Setup
 
 ```bash
-flask db migrate
+flask db upgrade
 
 # sample data
 python -m scripts.index_all_products

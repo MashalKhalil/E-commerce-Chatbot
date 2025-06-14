@@ -1,7 +1,7 @@
+import json
 import logging
 import uuid
 from datetime import datetime
-import json
 
 from models.product import Product
 from services.product_service import ProductService
@@ -77,7 +77,7 @@ class DatabaseSeeder:
                 "brand": "Apple",
                 "rating": 4.8,
                 "review_count": 2847,
-                "image_url": "https://images.pexels.com/photos/788946/pexels-photo-788946.jpeg",
+                "image_url": "https://images.pexels.com/photos/18525574/pexels-photo-18525574.jpeg",
                 "stock": 45,
                 "features": [
                     "A17 Pro Chip",
@@ -98,7 +98,7 @@ class DatabaseSeeder:
                 "brand": "Samsung",
                 "rating": 4.7,
                 "review_count": 1923,
-                "image_url": "https://images.pexels.com/photos/1616773/pexels-photo-1616773.jpeg",
+                "image_url": "https://images.pexels.com/photos/30466741/pexels-photo-30466741.jpeg",
                 "stock": 32,
                 "features": ["200MP Camera", "S Pen", '6.8" Display', "AI Features"],
             },
@@ -112,7 +112,7 @@ class DatabaseSeeder:
                 "brand": "Google",
                 "rating": 4.6,
                 "review_count": 1456,
-                "image_url": "https://images.pexels.com/photos/4068318/pexels-photo-4068318.jpeg",
+                "image_url": "https://images.pexels.com/photos/32218867/pexels-photo-32218867.jpeg",
                 "stock": 28,
                 "features": [
                     "AI Photography",
@@ -153,7 +153,7 @@ class DatabaseSeeder:
                 "brand": "Dell",
                 "rating": 4.5,
                 "review_count": 743,
-                "image_url": "https://images.pexels.com/photos/205421/pexels-photo-205421.jpeg",
+                "image_url": "https://images.pexels.com/photos/3776438/pexels-photo-3776438.jpeg",
                 "stock": 22,
                 "features": [
                     '13.4" OLED',
@@ -172,7 +172,7 @@ class DatabaseSeeder:
                 "brand": "ASUS",
                 "rating": 4.7,
                 "review_count": 634,
-                "image_url": "https://images.pexels.com/photos/7862442/pexels-photo-7862442.jpeg",
+                "image_url": "https://images.pexels.com/photos/12877878/pexels-photo-12877878.jpeg",
                 "stock": 18,
                 "features": ["RTX 4070", "AMD Ryzen 9", "240Hz Display", "ROG Design"],
             },
@@ -187,7 +187,7 @@ class DatabaseSeeder:
                 "brand": "Sony",
                 "rating": 4.8,
                 "review_count": 3421,
-                "image_url": "https://images.pexels.com/photos/3394650/pexels-photo-3394650.jpeg",
+                "image_url": "https://images.pexels.com/photos/10292805/pexels-photo-10292805.jpeg",
                 "stock": 67,
                 "features": [
                     "Active Noise Canceling",
@@ -208,7 +208,7 @@ class DatabaseSeeder:
                 "brand": "Apple",
                 "rating": 4.7,
                 "review_count": 2847,
-                "image_url": "https://images.pexels.com/photos/8534088/pexels-photo-8534088.jpeg",
+                "image_url": "https://images.pexels.com/photos/3825517/pexels-photo-3825517.jpeg",
                 "stock": 89,
                 "features": [
                     "Active Noise Canceling",
@@ -227,7 +227,7 @@ class DatabaseSeeder:
                 "brand": "Bose",
                 "rating": 4.6,
                 "review_count": 1234,
-                "image_url": "https://images.pexels.com/photos/3394651/pexels-photo-3394651.jpeg",
+                "image_url": "https://images.pexels.com/photos/7748203/pexels-photo-7748203.jpeg",
                 "stock": 34,
                 "features": [
                     "QuietComfort Technology",
@@ -246,7 +246,7 @@ class DatabaseSeeder:
                 "brand": "Sony",
                 "rating": 4.8,
                 "review_count": 4567,
-                "image_url": "https://images.pexels.com/photos/7862464/pexels-photo-7862464.jpeg",
+                "image_url": "https://images.pexels.com/photos/13189272/pexels-photo-13189272.jpeg",
                 "stock": 12,
                 "features": [
                     "Custom SSD",
@@ -265,7 +265,7 @@ class DatabaseSeeder:
                 "brand": "Microsoft",
                 "rating": 4.7,
                 "review_count": 3456,
-                "image_url": "https://images.pexels.com/photos/7862456/pexels-photo-7862456.jpeg",
+                "image_url": "https://images.pexels.com/photos/5626726/pexels-photo-5626726.jpeg",
                 "stock": 8,
                 "features": [
                     "12 TeraFLOPS",
@@ -285,7 +285,7 @@ class DatabaseSeeder:
                 "brand": "Razer",
                 "rating": 4.6,
                 "review_count": 892,
-                "image_url": "https://images.pexels.com/photos/2115256/pexels-photo-2115256.jpeg",
+                "image_url": "https://images.pexels.com/photos/8176505/pexels-photo-8176505.jpeg",
                 "stock": 156,
                 "features": [
                     "90hr Battery",
@@ -306,7 +306,7 @@ class DatabaseSeeder:
                 "brand": "Amazon",
                 "rating": 4.4,
                 "review_count": 2341,
-                "image_url": "https://images.pexels.com/photos/4790259/pexels-photo-4790259.jpeg",
+                "image_url": "https://images.pexels.com/photos/4790268/pexels-photo-4790268.jpeg",
                 "stock": 45,
                 "features": [
                     "3D Audio",
@@ -325,7 +325,7 @@ class DatabaseSeeder:
                 "brand": "Google",
                 "rating": 4.5,
                 "review_count": 1876,
-                "image_url": "https://images.pexels.com/photos/8090129/pexels-photo-8090129.jpeg",
+                "image_url": "https://images.pexels.com/photos/190048/pexels-photo-190048.jpeg",
                 "stock": 78,
                 "features": [
                     "Auto-Schedule",
@@ -345,7 +345,7 @@ class DatabaseSeeder:
                 "brand": "Ring",
                 "rating": 4.3,
                 "review_count": 3421,
-                "image_url": "https://images.pexels.com/photos/7031396/pexels-photo-7031396.jpeg",
+                "image_url": "https://images.pexels.com/photos/9461215/pexels-photo-9461215.jpeg",
                 "stock": 23,
                 "features": [
                     "3D Motion Detection",
