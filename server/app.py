@@ -1,14 +1,13 @@
 import os
-from flask import Flask, jsonify
-from models import db
-from flask_jwt_extended import JWTManager
-from flask_cors import CORS
-from flask_migrate import Migrate
-from dotenv import load_dotenv
 
 from config import config
+from dotenv import load_dotenv
+from flask import Flask, jsonify
+from flask_cors import CORS
+from flask_jwt_extended import JWTManager
+from flask_migrate import Migrate
+from models import db
 from utils.logger_config import setup_logging
-
 
 load_dotenv()
 
@@ -97,8 +96,12 @@ def create_app(config_name=None):
 app = create_app()
 
 if __name__ == "__main__":
+    port = int(os.environ.get("PORT", 5000))
+    debug = os.environ.get("FLASK_ENV", "development") == "development"
+    
     app.run(
         host="0.0.0.0",
-        port=int(os.environ.get("PORT", 5000)),
-        debug=app.config.get("DEBUG", False),
+        port=port,
+        debug=debug,
+        threaded=True
     )

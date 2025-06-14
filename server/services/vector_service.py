@@ -1,8 +1,9 @@
 import logging
-from typing import List, Dict, Any
+from typing import Any, Dict, List
+
+from flask import current_app
 from pinecone.grpc import PineconeGRPC as Pinecone
 from sentence_transformers import SentenceTransformer
-from flask import current_app
 
 logger = logging.getLogger(__name__)
 
