@@ -10,3 +10,4 @@ langchain-google-genai
 langchain-pinecone
 # google-genai
 werkzeug
+sentence-transformers
