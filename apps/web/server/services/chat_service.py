@@ -1,20 +1,21 @@
-import logging
-from typing import List, Dict, Any, Optional
-from langchain_google_genai import ChatGoogleGenerativeAI
-from langchain.schema import HumanMessage, AIMessage, SystemMessage
-from langchain.memory import ConversationBufferWindowMemory
-from langchain.tools import Tool
-from langchain.agents import initialize_agent, AgentType
-from flask import current_app
 import json
+import logging
 import uuid
+from typing import Any, Dict, List, Optional
 
-from models.product import Product
+from flask import current_app
+from langchain.agents import AgentType, initialize_agent
+from langchain.memory import ConversationBufferWindowMemory
+from langchain.schema import AIMessage, HumanMessage, SystemMessage
+from langchain.tools import Tool
+from langchain_google_genai import ChatGoogleGenerativeAI
 from models.chat_session import ChatSession
 from models.message import Message
-from .vector_service import VectorService
-from .product_service import ProductService
+from models.product import Product
+
 from .cart_service import CartService
+from .product_service import ProductService
+from .vector_service import VectorService
 
 logger = logging.getLogger(__name__)
 
@@ -313,7 +314,7 @@ class ChatService:
                 handle_parsing_errors=True,
             )
 
-            system_prompt = """You are TechBot, an AI shopping assistant for an electronics e-commerce store.
+            system_prompt = """You are Storey, an AI shopping assistant for an electronics e-commerce store.
             You help customers find the perfect tech products based on their needs and preferences.   
 
             Guidelines:            

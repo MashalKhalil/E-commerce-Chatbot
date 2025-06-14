@@ -1,119 +1,79 @@
-# E-commerce Chatbot Backend API
+# E-commerce + AI Chatbot Backend API
 
-A comprehensive Flask-based REST API for an intelligent e-commerce chatbot with vector search capabilities, LangChain integration, and Google Gemini AI.
+AI chatbot with vector search capabilities, LangChain integration, and Google Gemini support. Provides advanced product search, recommendations, and order management, cart management.
 
 ## Features
 
-### 🤖 Intelligent Chatbot
-- **LangChain Integration**: Advanced conversation management with memory
-- **Google Gemini Flash 2.0**: State-of-the-art language model with 1M token context
-- **Tool Calling**: Dynamic product search, filtering, and recommendations
-- **Session Management**: Persistent conversation history and context
+### **Assistant for Order Management and Advanced Search**
 
-### 🔍 Advanced Search
-- **Pinecone Vector Database**: Semantic product search and similarity matching
-- **Embedding Generation**: Automatic product vectorization using Sentence Transformers
-- **Hybrid Search**: Combines vector similarity with traditional filtering
-- **Real-time Recommendations**: Context-aware product suggestions
+- Advanced product searches, comparisons, cart operations, and recommendations based on user intent
+- Powered by Google Gemini Flash 2.0 for deep, contextual conversations
+- Maintains conversation history and user preferences across multiple interactions
 
-### 🛍️ Product Management
-- **Comprehensive Product Catalog**: 100+ electronics products across multiple categories
-- **Advanced Filtering**: Price range, brand, category, rating, stock status
-- **Dynamic Pricing**: Sale prices, discounts, and promotional offers
-- **Inventory Management**: Real-time stock tracking
+### **Advanced Vector Search**
 
-### 🔐 Authentication & Security
-- **JWT Authentication**: Secure token-based authentication
-- **User Management**: Registration, login, preferences, session management
-- **Role-based Access**: Admin endpoints for product management
-- **CORS Configuration**: Secure cross-origin resource sharing
+- Pinecone-powered vector database for understanding product relationships and user intent
+- Sentence Transformer models convert product descriptions into meaningful vector representations
+- AI analyzes user behavior patterns and preferences for personalized suggestions
+- Finds products similar to user preferences even without exact keyword matches
 
-## Technology Stack
+### **E-commerce Engine**
 
-### Core Framework
-- **Flask**: Lightweight and flexible web framework
-- **SQLAlchemy**: Powerful ORM for database operations
-- **Flask-Migrate**: Database migration management
-- **Flask-JWT-Extended**: JWT token management
+- Multi-dimensional search by price, brand, specifications, ratings, and availability
+- Persistent shopping carts with automatic price updates
+- User-friendly product comparisons and recommendations
 
-### AI & Machine Learning
-- **LangChain**: LLM orchestration and chain management
-- **Google Gemini Flash 2.0**: Advanced language model
-- **Pinecone**: Cloud-based vector database
-- **Sentence Transformers**: Text embedding generation
+## Setup
 
-### Database & Storage
-- **SQLite**: Development database (easily replaceable)
-- **Pinecone**: Vector storage for semantic search
-- **Flask-SQLAlchemy**: Database abstraction layer
+Prerequisites
 
-## Installation & Setup
-
-### Prerequisites
-- Python 3.8+
+- Python 3.12+
 - Pinecone account and API key
 - Google AI Studio API key
 
-### 1. Environment Setup
+Environment Setup
+
 ```bash
-# Clone the repository
-git clone <repository-url>
-cd server
+uv venv
+source venv/bin/activate
+uv sync
 
-# Create virtual environment
-python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
-
-# Install dependencies
-pip install -r requirements.txt
-```
-
-### 2. Environment Variables
-```bash
-# Copy environment template
 cp .env.example .env
-
-# Edit .env file with your credentials
 GOOGLE_API_KEY=your-google-api-key-here
 PINECONE_API_KEY=your-pinecone-api-key-here
-PINECONE_ENVIRONMENT=your-pinecone-environment
-SECRET_KEY=your-secret-key-here
+PINECONE_INDEX_NAME=ecommerce-products
 JWT_SECRET_KEY=your-jwt-secret-key-here
 ```
 
-### 3. Database Initialization
-```bash
-# Initialize database
-flask db init
-flask db migrate -m "Initial migration"
-flask db upgrade
+### DB & Pinecone Setup
 
-# Seed with sample data (automatic on first run)
-python app.py
+```bash
+flask db migrate
+
+# sample data
+python -m scripts.index_all_products
 ```
 
-### 4. Run the Application
+### Run the Application
+
 ```bash
-# Development mode
-python app.py
-
-# Or using Flask CLI
+flask run --debug
 flask run
-
-# Production mode
-python run.py
 ```
 
 ## API Endpoints
 
 ### Authentication
+
 - `POST /api/auth/register` - User registration
 - `POST /api/auth/login` - User login
 - `POST /api/auth/refresh` - Refresh access token
 - `GET /api/auth/me` - Get current user info
 - `PUT /api/auth/preferences` - Update user preferences
+- `POST /api/auth/deactivate` - Deactivate user account
 
 ### Products
+
 - `GET /api/products/` - Get products with filtering
 - `GET /api/products/<id>` - Get specific product
 - `POST /api/products/search` - Advanced semantic search
@@ -121,8 +81,28 @@ python run.py
 - `GET /api/products/categories` - Get all categories
 - `GET /api/products/brands` - Get all brands
 - `GET /api/products/stats` - Get product statistics
+- `POST /api/products/` - Create new product (Admin)
+- `PUT /api/products/<id>` - Update product (Admin)
+- `DELETE /api/products/<id>` - Delete product (Admin)
+
+### Cart Management
+
+- `GET /api/cart/<user_id>` - Get user's cart
+- `POST /api/cart/add` - Add item to cart
+- `DELETE /api/cart/remove` - Remove item from cart
+- `PUT /api/cart/update` - Update cart item quantity
+- `DELETE /api/cart/clear` - Clear entire cart
+
+### User Likes & Favorites
+
+- `POST /api/likes/toggle` - Toggle like/unlike product
+- `GET /api/likes/user/<user_id>` - Get user's liked products
+- `GET /api/likes/product/<product_id>` - Get product like count
+- `POST /api/likes/check` - Check if user likes specific product
+- `GET /api/likes/popular` - Get most popular/liked products
 
 ### Chat
+
 - `POST /api/chat/message` - Send message to chatbot
 - `GET /api/chat/history/<session_id>` - Get chat history
 - `GET /api/chat/sessions` - Get user's chat sessions
@@ -131,85 +111,110 @@ python run.py
 - `GET /api/chat/health` - Check chat service health
 
 ### System
+
 - `GET /api/health` - API health check
 
-## Configuration
+## Database Models
 
-### Environment Variables
-```bash
-# Flask Configuration
-FLASK_APP=app.py
-FLASK_ENV=development
-SECRET_KEY=your-secret-key-here
-DATABASE_URL=sqlite:///ecommerce.db
+### User
 
-# JWT Configuration
-JWT_SECRET_KEY=your-jwt-secret-key-here
-JWT_ACCESS_TOKEN_EXPIRES=3600
+- **Authentication & Security**: Email/password authentication with bcrypt hashing
+- **User Preferences**: JSON-stored preferences (favorite categories, price ranges, brands)
+- **Profile Management**: Name, email, account status, timestamps
+- **Relationships**: One-to-many with chat sessions, cart items, and user likes
+- **JWT Integration**: Secure token-based authentication support
 
-# Google Gemini API
-GOOGLE_API_KEY=your-google-api-key-here
+### Product
 
-# Pinecone Configuration
-PINECONE_API_KEY=your-pinecone-api-key-here
-PINECONE_ENVIRONMENT=your-pinecone-environment
-PINECONE_INDEX_NAME=ecommerce-products
+- **Core Information**: Name, description, pricing (current/original), category hierarchy
+- **Inventory Management**: Stock levels, availability status, sale indicators
+- **Brand & Rating**: Brand information, user ratings, review counts
+- **Rich Media**: Image URLs, feature lists (JSON-stored)
+- **Search Optimization**: Full-text search indexes on key fields
+- **Vector Integration**: Embedding IDs for semantic search capabilities
 
-# CORS Configuration
-FRONTEND_URL=http://localhost:5173
-```
+### Cart
 
-### Database Models
+- **Shopping Cart**: User-specific cart items with quantity management
+- **Relationships**: Links users to products with quantity tracking
+- **Timestamps**: Creation and update tracking for cart persistence
+- **Unique Constraints**: User-product relationship management
 
-#### User
-- User authentication and preferences
-- JWT token management
-- Chat session relationships
+### UserLike (Favorites)
 
-#### Product
-- Comprehensive product information
-- Vector embedding integration
-- Advanced search capabilities
+- **User Preferences**: Track user likes/favorites for products
+- **Relationship Management**: Many-to-many user-product relationships
+- **Unique Constraints**: Prevents duplicate likes per user-product pair
+- **Analytics Ready**: Supports popularity tracking and recommendations
 
-#### ChatSession
-- Conversation management
-- User association
-- Session metadata
+### ChatSession
 
-#### Message
-- Individual chat messages
-- Product associations
-- Message types and metadata
+- **Conversation Management**: User-specific chat session tracking
+- **Session Metadata**: Creation timestamps, session identification
+- **User Association**: Links to user accounts for personalized experiences
+- **Message Relationships**: One-to-many with individual messages
+
+### Message
+
+- **Chat History**: Individual chat messages with content and metadata
+- **Product Integration**: Links messages to relevant products
+- **Message Types**: Support for different message types and formats
+- **Session Tracking**: Associates messages with specific chat sessions
 
 ## Services Architecture
 
 ### VectorService
-- Pinecone integration
-- Embedding generation
-- Similarity search
-- Batch operations
+
+- **Pinecone Integration**: Cloud-based vector database management
+- **Embedding Generation**: Sentence Transformer model integration for product vectorization
+- **Semantic Search**: Advanced similarity matching and product discovery
+- **Batch Operations**: Efficient bulk indexing and search operations
+- **Vector Management**: Embedding storage, retrieval, and similarity calculations
 
 ### ChatService
-- LangChain orchestration
-- Gemini AI integration
-- Tool calling
-- Memory management
+
+- **LangChain Orchestration**: Advanced conversation flow management with memory
+- **Google Gemini Integration**: State-of-the-art AI model with 1M token context
+- **Intelligent Tool Calling**: Dynamic product search, filtering, and recommendations
+- **Session Management**: Persistent conversation history and context preservation
+- **Multi-Modal Support**: Text processing with context-aware responses
 
 ### ProductService
-- Product CRUD operations
-- Search and filtering
-- Recommendation engine
-- Embedding management
+
+- **CRUD Operations**: Complete product lifecycle management
+- **Advanced Search**: Multi-dimensional filtering (price, brand, category, rating)
+- **Recommendation Engine**: AI-powered product suggestions based on user behavior
+- **Inventory Management**: Stock tracking, availability checks, pricing updates
+- **Embedding Integration**: Automatic vector generation for semantic search
 
 ### AuthService
-- User authentication
-- JWT token management
-- Preference handling
-- Security validation
+
+- **JWT Authentication**: Secure token-based authentication with refresh tokens
+- **User Management**: Registration, login, profile updates, account deactivation
+- **Preference Handling**: User-specific settings and behavioral preferences
+- **Security Validation**: Password hashing, token verification, session management
+- **Authorization**: Role-based access control and permission management
+
+### CartService
+
+- **Shopping Cart Management**: Add, remove, update cart items with quantity control
+- **Cart Persistence**: User-specific cart storage with automatic updates
+- **Product Integration**: Real-time product data synchronization
+- **Quantity Validation**: Stock availability checks and quantity limits
+- **Cart Operations**: Bulk operations, cart clearing, and item management
+
+### LikeService
+
+- **User Preferences**: Like/unlike functionality for products
+- **Favorites Management**: User-specific product favorites tracking
+- **Social Features**: Popular products identification and trending analysis
+- **Recommendation Support**: Like-based product suggestions
+- **Analytics Integration**: User behavior tracking for personalization
 
 ## Development
 
 ### Adding New Products
+
 ```python
 from services.product_service import ProductService
 
@@ -227,22 +232,14 @@ product_data = {
 product = product_service.create_product(product_data)
 ```
 
-### Custom Chat Tools
-```python
-from langchain.tools import Tool
+following this, you can index the product in Pinecone:
 
-def custom_tool_function(input_text):
-    # Your custom logic here
-    return "Tool response"
-
-custom_tool = Tool(
-    name="custom_tool",
-    description="Description of what the tool does",
-    func=custom_tool_function
-)
+```bash
+python -m scripts.index_all_products
 ```
 
 ### Vector Search
+
 ```python
 from services.vector_service import VectorService
 
@@ -256,43 +253,14 @@ results = vector_service.search_similar_products(
 )
 ```
 
-## Deployment
-
-### Production Checklist
-- [ ] Set `FLASK_ENV=production`
-- [ ] Use strong secret keys
-- [ ] Configure production database
-- [ ] Set up proper logging
-- [ ] Configure CORS for production domain
-- [ ] Use HTTPS
-- [ ] Set up monitoring
-
-### Docker Deployment
-```dockerfile
-FROM python:3.9-slim
-
-WORKDIR /app
-COPY requirements.txt .
-RUN pip install -r requirements.txt
-
-COPY . .
-EXPOSE 5000
-
-CMD ["python", "run.py"]
-```
-
-### Environment-specific Configurations
-- Development: SQLite, debug mode, verbose logging
-- Production: PostgreSQL/MySQL, optimized settings, error logging
-
-## Monitoring & Logging
-
 ### Log Files
+
 - `logs/ecommerce_chatbot.log` - Application logs
 - Rotating file handler (10MB max, 10 backups)
 - Console and file output
 
 ### Health Checks
+
 - `/api/health` - Basic API health
 - `/api/chat/health` - Chat service health
 - Vector database statistics
@@ -303,16 +271,19 @@ CMD ["python", "run.py"]
 ### Common Issues
 
 1. **Pinecone Connection Error**
+
    - Verify API key and environment
    - Check network connectivity
    - Ensure index exists
 
 2. **Google AI API Error**
+
    - Verify API key
    - Check quota limits
    - Ensure proper model access
 
 3. **Database Migration Issues**
+
    - Delete migration files and reinitialize
    - Check database permissions
    - Verify SQLAlchemy models
@@ -325,10 +296,9 @@ CMD ["python", "run.py"]
 ## Contributing
 
 1. Fork the repository
-2. Create a feature branch
+2. Create a branch
 3. Make your changes
-4. Add tests
-5. Submit a pull request
+4. Submit a pull request
 
 ## License
 
