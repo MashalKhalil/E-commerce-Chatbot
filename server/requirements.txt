@@ -11,3 +11,4 @@ langchain-pinecone
 # google-genai
 werkzeug
 sentence-transformers
+psycopg2-binary
