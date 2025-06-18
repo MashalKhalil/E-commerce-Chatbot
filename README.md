@@ -63,12 +63,6 @@ A full-stack e-commerce platform featuring an intelligent AI shopping assistant,
 - **Google AI Studio** API key
 - **Pinecone** account and API key
 
-### Access the Application
-
-- **Frontend**: http://localhost:3000
-- **Backend API**: http://localhost:5000
-- **API Health**: http://localhost:5000/api/health
-
 ### Tech
 
 - **Language Model**: Google Gemini Flash 2.0
