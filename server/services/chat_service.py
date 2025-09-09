@@ -318,7 +318,7 @@ class ChatService:
             chat_session = ChatSession.query.get(session_id)
             if not chat_session:
                 chat_session = ChatSession(id=session_id, user_id=user_id)
-                from app import db
+                from models import db
 
                 db.session.add(chat_session)
                 db.session.commit()
@@ -329,7 +329,7 @@ class ChatService:
                 content=user_message,
                 is_bot=False,
             )
-            from app import db
+            from models import db
 
             db.session.add(user_msg)
 
@@ -455,7 +455,7 @@ class ChatService:
                 content="I'm sorry, I encountered an error. Please try again.",
                 is_bot=True,
             )
-            from app import db
+            from models import db
 
             db.session.add(error_msg)
             db.session.commit()

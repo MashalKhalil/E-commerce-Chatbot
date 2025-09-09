@@ -1,12 +1,13 @@
 import uuid
 
-from app import db
 from models import Product, UserLike
 
 
 class LikeService:
     def toggle_like(self, user_id: str, product_id: str):
         """Toggle like status for a product"""
+        from models import db
+        
         existing_like = UserLike.query.filter_by(
             user_id=user_id, product_id=product_id
         ).first()
@@ -55,6 +56,7 @@ class LikeService:
     def get_popular_products(self, limit: int = 10):
         """Get most liked products"""
         from sqlalchemy import func
+        from models import db
         
         popular_products = (
             db.session.query(

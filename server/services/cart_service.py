@@ -1,12 +1,13 @@
 import uuid
 
-from app import db
 from models import Cart, Product
 
 
 class CartService:
     def add_to_cart(self, user_id: str, product_id: str, quantity: int = 1):
         """Add a product to the user's cart"""
+        from models import db
+        
         try:
             # Check if product exists
             product = Product.query.get(product_id)
@@ -58,6 +59,8 @@ class CartService:
 
     def remove_from_cart(self, user_id: str, item_id: str):
         """Remove an item from the user's cart"""
+        from models import db
+        
         try:
             cart_item = Cart.query.filter_by(id=item_id, user_id=user_id).first()
             if cart_item:
@@ -71,6 +74,8 @@ class CartService:
 
     def update_cart_quantity(self, user_id: str, item_id: str, quantity: int):
         """Update the quantity of a cart item"""
+        from models import db
+        
         try:
             if quantity <= 0:
                 return self.remove_from_cart(user_id, item_id)
@@ -88,6 +93,8 @@ class CartService:
 
     def clear_cart(self, user_id: str):
         """Clear all items from the user's cart"""
+        from models import db
+        
         try:
             Cart.query.filter_by(user_id=user_id).delete()
             db.session.commit()

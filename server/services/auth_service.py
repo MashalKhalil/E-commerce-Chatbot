@@ -31,7 +31,7 @@ class AuthService:
             user_id = str(uuid.uuid4())
             user = User(id=user_id, email=email, name=name, password=password)
 
-            from app import db
+            from models import db
 
             db.session.add(user)
             db.session.commit()
@@ -51,7 +51,7 @@ class AuthService:
 
         except Exception as e:
             logger.error(f"Error registering user: {str(e)}")
-            from app import db
+            from models import db
 
             db.session.rollback()
             return {"success": False, "message": "Registration failed"}
@@ -72,7 +72,7 @@ class AuthService:
             refresh_token = create_refresh_token(identity=user.id)
 
             user.updated_at = datetime.utcnow()
-            from app import db
+            from models import db
 
             db.session.commit()
 
@@ -110,7 +110,7 @@ class AuthService:
                 return {"success": False, "message": "User not found"}
 
             user.set_preferences(preferences)
-            from app import db
+            from models import db
 
             db.session.commit()
 
@@ -124,7 +124,7 @@ class AuthService:
 
         except Exception as e:
             logger.error(f"Error updating user preferences: {str(e)}")
-            from app import db
+            from models import db
 
             db.session.rollback()
             return {"success": False, "message": "Failed to update preferences"}
@@ -156,7 +156,7 @@ class AuthService:
             user.is_active = False
             user.updated_at = datetime.utcnow()
 
-            from app import db
+            from models import db
 
             db.session.commit()
 
@@ -166,7 +166,7 @@ class AuthService:
 
         except Exception as e:
             logger.error(f"Error deactivating user: {str(e)}")
-            from app import db
+            from models import db
 
             db.session.rollback()
             return {"success": False, "message": "Failed to deactivate user"}

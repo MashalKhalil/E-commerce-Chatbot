@@ -17,7 +17,7 @@ class ProductService:
         try:
             product = Product(**product_data)
 
-            from app import db
+            from models import db
 
             db.session.add(product)
             db.session.flush()
@@ -44,7 +44,7 @@ class ProductService:
 
         except Exception as e:
             logger.error(f"Error creating product: {str(e)}")
-            from app import db
+            from models import db
 
             db.session.rollback()
             raise
@@ -85,7 +85,7 @@ class ProductService:
                     product.id, search_text, metadata
                 )
 
-            from app import db
+            from models import db
 
             db.session.commit()
 
@@ -94,7 +94,7 @@ class ProductService:
 
         except Exception as e:
             logger.error(f"Error updating product: {str(e)}")
-            from app import db
+            from models import db
 
             db.session.rollback()
             raise
@@ -108,7 +108,7 @@ class ProductService:
 
             self.vector_service.delete_product_embedding(product_id)
 
-            from app import db
+            from models import db
 
             db.session.delete(product)
             db.session.commit()
@@ -118,7 +118,7 @@ class ProductService:
 
         except Exception as e:
             logger.error(f"Error deleting product: {str(e)}")
-            from app import db
+            from models import db
 
             db.session.rollback()
             raise
@@ -284,7 +284,7 @@ class ProductService:
             for product in products:
                 product.embedding_id = product.id
 
-            from app import db
+            from models import db
 
             db.session.commit()
 
