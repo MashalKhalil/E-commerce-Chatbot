@@ -591,4 +591,5 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 **Happy coding! 🚀**
 
-If you encounter any issues or have questions, please feel free to open an issue in the repository.
+If you encounter any issues or have questions, please feel free to open an issue in the repository.#   e c o m m e r c e - c h a t b o t  
+ 
