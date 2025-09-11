@@ -1,8 +1,9 @@
 import json
 import logging
 import uuid
+from datetime import datetime
 from typing import Any, Dict, List, Optional
-
+from config import Config as AppConfig
 from flask import current_app
 from langchain.agents import AgentType, initialize_agent
 from langchain.memory import ConversationBufferWindowMemory
@@ -18,7 +19,6 @@ from .product_service import ProductService
 from .vector_service import VectorService
 
 logger = logging.getLogger(__name__)
-
 
 class ChatService:
     """Enhanced chat service with LangChain and Gemini integration"""
@@ -41,12 +41,9 @@ class ChatService:
                 max_tokens=1000,
                 convert_system_message_to_human=True,
             )
-
             self.vector_service.initialize()
-
             self.initialized = True
             logger.info("Chat service initialized successfully")
-
         except Exception as e:
             logger.error(f"Failed to initialize chat service: {str(e)}")
             raise
@@ -55,9 +52,7 @@ class ChatService:
         """Get or create memory for a chat session"""
         if session_id not in self.memory_sessions:
             self.memory_sessions[session_id] = ConversationBufferWindowMemory(
-                k=10,
-                return_messages=True,
-                memory_key="chat_history",
+                k=10, return_messages=True, memory_key="chat_history"
             )
         return self.memory_sessions[session_id]
 
@@ -86,7 +81,7 @@ class ChatService:
             ),
             Tool(
                 name="add_to_cart",
-                description="Add a product to the user's cart. Input: JSON string with keys: product_id (str), quantity (int, optional, default 1).",
+                description="Add a product to the user's cart. Input: JSON string with keys: product_id (str or product name), quantity (int, optional, default 1).",
                 func=self._add_to_cart_tool,
             ),
         ]
@@ -95,20 +90,16 @@ class ChatService:
     def _search_products_tool(self, query: str) -> str:
         """Tool function for semantic product search"""
         try:
-            similar_products = self.vector_service.search_similar_products(
-                query, top_k=6
-            )
+            similar_products = self.vector_service.search_similar_products(query, top_k=6)
+            logger.info(f"Found {len(similar_products)} similar products for query: {query}")
 
             if not similar_products:
-                return json.dumps(
-                    {
-                        "message": "No products found for the given query.",
-                        "product_ids": [],
-                    }
-                )
+                return json.dumps({"message": "No products found for the given query.", "product_ids": []})
 
             product_ids = [p["id"] for p in similar_products]
-            products = Product.query.filter(Product.id.in_(product_ids)).all()
+            products = [Product(**doc) for doc in AppConfig.db["products"].find({"id": {"$in": product_ids}})]
+            if not products:
+                return json.dumps({"message": "No matching products found in database.", "product_ids": []})
 
             result = "Found the following products:\n"
             for product in products:
@@ -116,29 +107,25 @@ class ChatService:
                 result += f"  {product.description[:100]}...\n"
 
             return json.dumps({"message": result, "product_ids": product_ids})
-
         except Exception as e:
             logger.error(f"Error in search_products_tool: {str(e)}")
-            return json.dumps(
-                {
-                    "message": "Error occurred while searching for products.",
-                    "product_ids": [],
-                }
-            )
+            return json.dumps({"message": "Error occurred while searching for products.", "product_ids": []})
 
     def _filter_products_tool(self, filter_json: str) -> str:
         """Tool function for filtering products"""
         try:
             filters = json.loads(filter_json)
-            products = Product.search_by_filters(**filters)
+            query = {}
+            if "category" in filters:
+                query["category"] = filters["category"]
+            if "min_price" in filters and filters["min_price"]:
+                query["price"] = {"$gte": float(filters["min_price"])}
+            if "max_price" in filters and filters["max_price"]:
+                query["price"] = query.get("price", {}) | {"$lte": float(filters["max_price"])}
 
+            products = [Product(**doc) for doc in AppConfig.db["products"].find(query)] if query else [Product(**doc) for doc in AppConfig.db["products"].find()]
             if not products:
-                return json.dumps(
-                    {
-                        "message": "No products found matching the specified filters.",
-                        "product_ids": [],
-                    }
-                )
+                return json.dumps({"message": "No products found matching the specified filters.", "product_ids": []})
 
             result = f"Found {len(products)} products matching your criteria:\n"
             for product in products[:5]:
@@ -146,23 +133,17 @@ class ChatService:
 
             product_ids = [product.id for product in products[:5]]
             return json.dumps({"message": result, "product_ids": product_ids})
-
         except Exception as e:
             logger.error(f"Error in filter_products_tool: {str(e)}")
-            return json.dumps(
-                {
-                    "message": "Error occurred while filtering products.",
-                    "product_ids": [],
-                }
-            )
+            return json.dumps({"message": "Error occurred while filtering products.", "product_ids": []})
 
     def _get_product_details_tool(self, product_id: str) -> str:
         """Tool function for getting product details"""
         try:
-            product = Product.query.get(product_id.strip())
-            if not product:
+            product_data = AppConfig.db["products"].find_one({"id": product_id.strip()})
+            if not product_data:
                 return "Product not found."
-
+            product = Product(**product_data)
             result = "Product Details:\n"
             result += f"Name: {product.name}\n"
             result += f"Brand: {product.brand}\n"
@@ -171,9 +152,7 @@ class ChatService:
             result += f"Description: {product.description}\n"
             result += f"Features: {', '.join(product.get_features())}\n"
             result += f"Stock: {product.stock} available\n"
-
             return result
-
         except Exception as e:
             logger.error(f"Error in get_product_details_tool: {str(e)}")
             return "Error occurred while getting product details."
@@ -181,36 +160,22 @@ class ChatService:
     def _get_recommendations_tool(self, input_text: str) -> str:
         """Tool function for getting product recommendations"""
         try:
-            product = Product.query.get(input_text.strip())
-
-            if product:
-                similar_products = self.vector_service.search_similar_products(
-                    product.get_search_text(), top_k=4
-                )
-                similar_ids = [
-                    p["id"] for p in similar_products if p["id"] != product.id
-                ]
-                recommendations = Product.query.filter(
-                    Product.id.in_(similar_ids)
-                ).all()
+            product_data = AppConfig.db["products"].find_one({"id": input_text.strip()})
+            if product_data:
+                product = Product(**product_data)
+                similar_products = self.vector_service.search_similar_products(product.get_search_text(), top_k=4)
+                similar_ids = [p["id"] for p in similar_products if p["id"] != product.id]
             else:
-                similar_products = self.vector_service.search_similar_products(
-                    input_text, top_k=4
-                )
+                similar_products = self.vector_service.search_similar_products(input_text, top_k=4)
                 similar_ids = [p["id"] for p in similar_products]
-                recommendations = Product.query.filter(
-                    Product.id.in_(similar_ids)
-                ).all()
 
+            recommendations = [Product(**doc) for doc in AppConfig.db["products"].find({"id": {"$in": similar_ids}})]
             if not recommendations:
                 return "No recommendations found."
-
             result = "Here are some recommendations:\n"
             for rec in recommendations:
                 result += f"- {rec.name} by {rec.brand} - ${rec.price}\n"
-
             return result
-
         except Exception as e:
             logger.error(f"Error in get_recommendations_tool: {str(e)}")
             return "Error occurred while getting recommendations."
@@ -218,90 +183,57 @@ class ChatService:
     def _add_to_cart_tool(self, input_json: str) -> str:
         """Tool function to add a product to the user's cart"""
         try:
-            # Log the input for debugging
             logger.info(f"add_to_cart_tool input: {input_json}")
-            
             data = json.loads(input_json)
             product_id = data.get("product_id")
             quantity = data.get("quantity", 1)
             user_id = data.get("user_id", "guest_user")
-
             logger.info(f"Parsed data: product_id={product_id}, quantity={quantity}, user_id={user_id}")
 
             if not product_id:
-                return json.dumps(
-                    {"message": "Missing product_id for add to cart.", "success": False}
-                )
+                return json.dumps({"message": "Missing product_id for add to cart.", "success": False})
 
-            # If product_id looks like a product name, try to find the actual product
             if len(product_id) < 32 or " " in product_id:
                 logger.info(f"Searching for product by name: {product_id}")
-                # Search for product by name (case-insensitive)
-                product = Product.query.filter(
-                    Product.name.ilike(f"%{product_id}%")
-                ).first()
-                
+                product = next((p for p in [Product(**doc) for doc in AppConfig.db["products"].find()] if product_id.lower() in p.name.lower()), None)
                 if product:
                     logger.info(f"Found product: {product.name} with ID: {product.id}")
                     product_id = product.id
                 else:
                     logger.warning(f"Product not found: {product_id}")
-                    return json.dumps(
-                        {
-                            "message": f"Product '{product_id}' not found.",
-                            "success": False,
-                        }
-                    )
+                    return json.dumps({"message": f"Product '{product_id}' not found.", "success": False})
 
-            # Add to cart using the cart service
             logger.info(f"Adding to cart: user_id={user_id}, product_id={product_id}, quantity={quantity}")
             result = self.cart_service.add_to_cart(user_id, product_id, quantity)
             logger.info(f"Cart service result: {result}")
-            
-            # Check if the cart service returned an error
+
             if not result.get("success", True):
                 return json.dumps(result)
-            
-            # Get product details for response
-            product = Product.query.get(product_id)
+
+            product = Product(**AppConfig.db["products"].find_one({"id": product_id}))
             if not product:
-                return json.dumps(
-                    {
-                        "message": f"Product with ID {product_id} not found.",
-                        "success": False,
-                    }
-                )
+                return json.dumps({"message": f"Product with ID {product_id} not found.", "success": False})
 
             success_response = {
                 "message": f"Added {quantity} x {product.name} to your cart.",
                 "success": True,
-                "product": {
-                    "id": product.id,
-                    "name": product.name,
-                    "price": product.price,
-                },
+                "product": {"id": product.id, "name": product.name, "price": product.price},
                 "quantity": quantity,
             }
-            
             logger.info(f"Returning success response: {success_response}")
             return json.dumps(success_response)
-            
         except json.JSONDecodeError as e:
             logger.error(f"JSON decode error in add_to_cart_tool: {str(e)}")
             logger.error(f"Input that caused error: {repr(input_json)}")
-            return json.dumps(
-                {"message": "Invalid JSON format in request.", "success": False}
-            )
+            return json.dumps({"message": "Invalid JSON format in request.", "success": False})
         except Exception as e:
             logger.error(f"Error in add_to_cart_tool: {str(e)}")
-            return json.dumps(
-                {"message": "Error occurred while adding to cart.", "success": False}
-            )
+            return json.dumps({"message": "Error occurred while adding to cart.", "success": False})
 
     def _extract_product_names_from_text(self, text: str) -> list:
         """Extract product names from the message text by matching against all product names in the database."""
         product_names = []
-        all_products = Product.query.all()
+        all_products = [Product(**doc) for doc in AppConfig.db["products"].find()]
         for product in all_products:
             if product.name in text:
                 product_names.append(product.name)
@@ -315,23 +247,24 @@ class ChatService:
             self.initialize()
 
         try:
-            chat_session = ChatSession.query.get(session_id)
-            if not chat_session:
+            chat_session_data = AppConfig.db["chat_sessions"].find_one({"id": session_id})
+            if not chat_session_data:
                 chat_session = ChatSession(id=session_id, user_id=user_id)
-                from models import db
-
-                db.session.add(chat_session)
-                db.session.commit()
+                AppConfig.db["chat_sessions"].insert_one(chat_session.dict())
+            else:
+                chat_session = ChatSession(**chat_session_data)
 
             user_msg = Message(
                 id=str(uuid.uuid4()),
                 chat_session_id=session_id,
                 content=user_message,
                 is_bot=False,
+                created_at=datetime.utcnow(),
             )
-            from models import db
-
-            db.session.add(user_msg)
+            # Convert products to JSON string as per Message model
+            user_msg_dict = user_msg.dict()
+            user_msg_dict["products"] = json.dumps(user_msg_dict.get("products", []))
+            AppConfig.db["messages"].insert_one(user_msg_dict)
 
             memory = self.get_or_create_memory(session_id)
             chat_history = []
@@ -363,7 +296,7 @@ class ChatService:
             - Ask clarifying questions if the user's request is unclear
             - Focus on electronics categories: smartphones, laptops, headphones, gaming equipment, smart home devices
             - When a user wants to add a product to cart, use the add_to_cart tool with the product name or ID
-            - If the user says "add this to cart" or similar, use the product name from your most recent message
+            - If the user says "add this to cart" or similar, use the product name from your recent message
 
             Available tools:
             - search_products: Find products using semantic search. Input: search query (str).
@@ -375,20 +308,12 @@ class ChatService:
 
             agent_input = {"input": f"{system_prompt}\n\nUser: {user_message}"}
             result = agent(agent_input)
-            ai_response = (
-                result["output"]
-                if isinstance(result, dict) and "output" in result
-                else result
-            )
+            ai_response = result["output"] if isinstance(result, dict) and "output" in result else str(result)
 
             product_ids = []
             if isinstance(result, dict) and "intermediate_steps" in result:
                 for step in result["intermediate_steps"]:
-                    tool_name = (
-                        getattr(step[0], "tool", None)
-                        if hasattr(step[0], "tool")
-                        else None
-                    )
+                    tool_name = getattr(step[0], "tool", None) if hasattr(step[0], "tool") else None
                     tool_output = step[1]
                     if tool_name in ["search_products", "filter_products"]:
                         try:
@@ -412,12 +337,7 @@ class ChatService:
             if not product_ids:
                 product_names = self._extract_product_names_from_text(message_text)
                 if product_names:
-                    product_ids = [
-                        p.id
-                        for p in Product.query.filter(
-                            Product.name.in_(product_names)
-                        ).all()
-                    ]
+                    product_ids = [p.id for p in [Product(**doc) for doc in AppConfig.db["products"].find({"name": {"$in": product_names}})]]
 
             ai_msg = Message(
                 id=str(uuid.uuid4()),
@@ -425,24 +345,22 @@ class ChatService:
                 content=message_text,
                 is_bot=True,
                 message_type="product" if product_ids else "text",
-                products=product_ids,
+                created_at=datetime.utcnow(),
             )
-            db.session.add(ai_msg)
-            db.session.commit()
+            # Convert products to JSON string
+            ai_msg_dict = ai_msg.dict()
+            ai_msg_dict["products"] = json.dumps(product_ids if product_ids else [])
+            AppConfig.db["messages"].insert_one(ai_msg_dict)
 
             products = []
             if product_ids:
-                products = [
-                    Product.query.get(pid).to_dict()
-                    for pid in product_ids
-                    if Product.query.get(pid)
-                ]
+                products = [Product(**AppConfig.db["products"].find_one({"id": pid})).to_dict() for pid in product_ids if AppConfig.db["products"].find_one({"id": pid})]
 
             return {
                 "id": ai_msg.id,
                 "content": message_text,
                 "isBot": True,
-                "timestamp": ai_msg.created_at.isoformat(),
+                "timestamp": ai_msg.created_at.isoformat() if ai_msg.created_at else datetime.utcnow().isoformat(),
                 "products": products,
                 "type": ai_msg.message_type,
             }
@@ -454,25 +372,23 @@ class ChatService:
                 chat_session_id=session_id,
                 content="I'm sorry, I encountered an error. Please try again.",
                 is_bot=True,
+                created_at=datetime.utcnow(),
             )
-            from models import db
-
-            db.session.add(error_msg)
-            db.session.commit()
+            error_msg_dict = error_msg.dict()
+            error_msg_dict["products"] = json.dumps([])
+            AppConfig.db["messages"].insert_one(error_msg_dict)
             return {
                 "id": error_msg.id,
                 "content": error_msg.content,
                 "isBot": True,
-                "timestamp": error_msg.created_at.isoformat(),
+                "timestamp": error_msg.created_at.isoformat() if error_msg.created_at else datetime.utcnow().isoformat(),
                 "products": [],
                 "type": "text",
             }
 
     def _extract_product_ids_from_response(self, response: str) -> List[str]:
         """Extract product IDs from AI response (basic implementation)"""
-
         product_ids = []
-
         return product_ids
 
     def get_chat_history(
@@ -480,15 +396,11 @@ class ChatService:
     ) -> List[Dict[str, Any]]:
         """Get chat history for a session"""
         try:
-            messages = (
-                Message.query.filter_by(chat_session_id=session_id)
-                .order_by(Message.created_at.asc())
-                .limit(limit)
-                .all()
-            )
-
+            messages = [
+                Message(**{k: v for k, v in doc.items() if k in Message.__fields__})  # Filter only valid fields
+                for doc in AppConfig.db["messages"].find({"chat_session_id": session_id}).sort("created_at", 1).limit(limit)
+            ]
             return [msg.to_dict(include_product_details=True) for msg in messages]
-
         except Exception as e:
             logger.error(f"Error getting chat history: {str(e)}")
             return []
